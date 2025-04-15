@@ -1,0 +1,19 @@
+import UIKit
+
+class ViewController: UIViewController {
+
+    @IBOutlet weak var messageLabel: UILabel!
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view.
+        messageLabel.textColor =  .green
+        messageLabel.text = "Hello"
+    }
+
+    @IBAction func clickMeButt(_ sender: Any) {
+        messageLabel.text = "welcome"
+        messageLabel.textColor =  .darkGray
+        messageLabel.backgroundColor = .orange
+    }
+    
+}
