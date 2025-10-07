@@ -1,0 +1,150 @@
+import SwiftUI
+import Firebase
+
+@main
+struct FirebaseCRUDApp: App {
+    init() {
+        FirebaseApp.configure()    // Firebase ஆரம்பித்தல்
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+import Foundation
+import FirebaseDatabase
+
+struct User: Identifiable, Codable {
+    var id: String                // Firebase key
+    var name: String
+    var age: Int
+    
+    // Firebase dictionary converter
+    func toDictionary() -> [String: Any] {
+        return [
+            "name": name,
+            "age": age
+        ]
+    }
+}
+import Foundation
+import FirebaseDatabase
+
+class UserViewModel: ObservableObject {
+    @Published var users: [User] = []
+    
+    private let ref = Database.database().reference().child("users")
+    
+    // 🔹 CREATE
+    func addUser(name: String, age: Int) {
+        let key = ref.childByAutoId().key ?? UUID().uuidString
+        let user = User(id: key, name: name, age: age)
+        ref.child(key).setValue(user.toDictionary())
+    }
+    
+    // 🔹 READ (Realtime Listener)
+    func fetchUsers() {
+        ref.observe(.value) { snapshot in
+            var fetched: [User] = []
+            for child in snapshot.children {
+                if let snap = child as? DataSnapshot,
+                   let dict = snap.value as? [String: Any],
+                   let name = dict["name"] as? String,
+                   let age = dict["age"] as? Int {
+                    fetched.append(User(id: snap.key, name: name, age: age))
+                }
+            }
+            DispatchQueue.main.async {
+                self.users = fetched
+            }
+        }
+    }
+    
+    // 🔹 UPDATE
+    func updateUser(user: User, newName: String, newAge: Int) {
+        let updatedData: [String: Any] = [
+            "name": newName,
+            "age": newAge
+        ]
+        ref.child(user.id).updateChildValues(updatedData)
+    }
+    
+    // 🔹 DELETE
+    func deleteUser(user: User) {
+        ref.child(user.id).removeValue()
+    }
+}
+import SwiftUI
+
+struct ContentView: View {
+    @StateObject private var vm = UserViewModel()
+    
+    @State private var name = ""
+    @State private var age = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 15) {
+                
+                // 🔹 Add User Section
+                TextField("Enter name", text: $name)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                TextField("Enter age", text: $age)
+                    .keyboardType(.numberPad)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                Button(action: {
+                    guard let userAge = Int(age), !name.isEmpty else { return }
+                    vm.addUser(name: name, age: userAge)
+                    name = ""
+                    age = ""
+                }) {
+                    Text("Add User")
+                        .fontWeight(.bold)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                
+                Divider()
+                
+                // 🔹 Users List
+                List {
+                    ForEach(vm.users) { user in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(user.name).font(.headline)
+                                Text("Age: \(user.age)").font(.subheadline)
+                            }
+                            Spacer()
+                            
+                            // Update Button
+                            Button("✏️") {
+                                let newName = user.name + " ⭐"
+                                let newAge = user.age + 1
+                                vm.updateUser(user: user, newName: newName, newAge: newAge)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                            
+                            // Delete Button
+                            Button("🗑️") {
+                                vm.deleteUser(user: user)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                    }
+                }
+            }
+            .padding()
+            .navigationTitle("Firebase Users")
+            .onAppear {
+                vm.fetchUsers()
+            }
+        }
+    }
+}
