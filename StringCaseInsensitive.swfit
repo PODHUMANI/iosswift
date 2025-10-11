@@ -1,0 +1,20 @@
+let str1 = "Hello"
+let str2 = "hello"
+
+if str1.caseInsensitiveCompare(str2) == .orderedSame {
+    print("Same strings (case ignored)")
+} else {
+    print("Different strings")
+}
+Same strings (case ignored)
+let str1 = "HELLO"
+let str2 = "hello"
+
+if str1.lowercased() == str2.lowercased() {
+    print("Same strings")
+} else {
+    print("Different strings")
+}
+if str1.localizedCaseInsensitiveCompare(str2) == .orderedSame {
+    print("Equal ignoring case (localized)")
+}
