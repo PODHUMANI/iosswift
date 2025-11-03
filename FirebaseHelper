@@ -1,0 +1,15 @@
+import Foundation
+
+struct FirebaseHelper {
+    static func sanitizeEmail(_ email: String) -> String {
+        return email
+            .replacingOccurrences(of: ".", with: "_dot_")
+            .replacingOccurrences(of: "@", with: "_at_")
+    }
+    
+    static func unsanitizeEmail(_ safeEmail: String) -> String {
+        return safeEmail
+            .replacingOccurrences(of: "_dot_", with: ".")
+            .replacingOccurrences(of: "_at_", with: "@")
+    }
+}
